@@ -25,6 +25,11 @@ sudo systemctl unmask docker
 sudo systemctl unmask docker.socket
 sudo systemctl unmask containerd.service
 
+sudo systemctl start docker
+sudo systemctl start docker.socket
+sudo systemctl start containerd.service
+
+
 # Kiểm tra xem Docker daemon có đang chạy không
 if ! sudo systemctl is-active --quiet docker; then
     echo "❌ Docker daemon không chạy. Khởi động Docker..."
