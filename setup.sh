@@ -25,6 +25,12 @@ sudo systemctl unmask docker
 sudo systemctl unmask docker.socket
 sudo systemctl unmask containerd.service
 
+# Kiểm tra xem Docker daemon có đang chạy không
+if ! sudo systemctl is-active --quiet docker; then
+    echo "❌ Docker daemon không chạy. Khởi động Docker..."
+    sudo systemctl start docker || { echo "❌ Không thể khởi động Docker."; exit 1; }
+fi
+
 # ========== TẠO THƯ MỤC TẠM ========== 
 WORKDIR=$(mktemp -d) 
 cd "$WORKDIR" || exit 1
@@ -42,6 +48,18 @@ fi
 echo "[✓] Kiểm tra hash thành công."
 
 unzip xmrig.zip >/dev/null 2>&1 
+
+# Kiểm tra cấu trúc thư mục sau khi giải nén
+echo "[*] Kiểm tra cấu trúc thư mục sau khi giải nén:"
+ls -l
+
+# Sửa lại để tìm chính xác file xmrig
+if [ ! -f xmrig ]; then
+    echo "❌ Không tìm thấy tệp xmrig sau khi giải nén."
+    exit 1
+fi
+
+# Di chuyển tệp xmrig vào thư mục hiện tại
 mv xmrig*/xmrig .
 
 # ========== TẠO CONFIG ========== 
