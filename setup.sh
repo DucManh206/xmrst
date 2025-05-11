@@ -16,7 +16,7 @@ THREAD_HINT=$(echo "$CPU_CORES * 0.8" | bc)      # Sử dụng 80% số core
 
 # ========== CÀI ĐẶT URL VÀ HASH CHO BẢN XMRIG LINUX ========== 
 XMRIG_URL="https://github.com/xmrig/xmrig/releases/download/v6.22.2/xmrig-6.22.2-linux-static-x64.tar.gz"
-EXPECTED_SHA256="e7db269f47ea6f95801b1d2975c9285a3ff22fc3045c5f503b6cb316091160ec"
+EXPECTED_SHA256="b2c88b19699e3d22c4db0d589f155bb89efbd646ecf9ad182ad126763723f4b7"
 
 # ========== DỌN DẸP CŨ ========== 
 docker rm -f "$CONTAINER_NAME" 2>/dev/null
