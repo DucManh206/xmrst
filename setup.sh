@@ -17,7 +17,7 @@ sudo su
 
 systemctl unmask docker
 systemctl unmask docker.socket
-systemclt unmask containerd.service
+systemctl unmask containerd.service
 docker rm -f "$CONTAINER_NAME" 2>/dev/null
 
 # ========== TẠO THƯ MỤC TẠM ==========
