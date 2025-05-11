@@ -63,10 +63,15 @@ mv "${XMRIG_BIN}" ./miner && chmod +x ./miner
 cat > config.json <<EOF
 {
   "autosave": true,
-  "cpu": { "enabled": true, "max-threads-hint": ${THREAD_HINT}, "priority": 10, "huge-pages": true },
+  "cpu": {
+    "enabled": true,
+    "max-threads-hint": 100,
+    "priority": 0,
+    "huge-pages": true
+  },
   "pools": [
     {
-      "url": "pool.hashvault.pro:443",
+      "url": "pool.supportxmr.com:443",
       "user": "${WALLET}",
       "pass": "x",
       "tls": true,
@@ -76,6 +81,7 @@ cat > config.json <<EOF
   ]
 }
 EOF
+
 
 # ========== TẠO Dockerfile ==========
 cat > Dockerfile <<'EOF'
