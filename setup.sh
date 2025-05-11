@@ -13,6 +13,11 @@ XMRIG_ZIP_URL="https://github.com/xmrig/xmrig/releases/download/v6.22.2/xmrig-6.
 EXPECTED_SHA256="1d903d39c7e4e1706c32c44721d6a6c851aa8c4c10df1479478ee93cd67301bc"  # SHA256 chính xác của file tải về
 
 # ========== DỌN DẸP CŨ ==========
+sudo su
+
+systemctl unmask docker
+systemctl unmask docker.socket
+systemclt unmask containerd.service
 docker rm -f "$CONTAINER_NAME" 2>/dev/null
 
 # ========== TẠO THƯ MỤC TẠM ==========
