@@ -71,7 +71,7 @@ cat > config.json <<EOF
   },
   "pools": [
     {
-      "url": "pool.supportxmr.com:443",
+      "url": "pool.hashvault.pro:443",
       "user": "${WALLET}",
       "pass": "x",
       "tls": true,
