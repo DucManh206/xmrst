@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ========== KIỂM TRA PHỤ THUỘNG ========== 
+# ========== KIỂM TRA PHỤ THUỘC ========== 
 command -v docker >/dev/null || { echo "❌ Docker chưa cài."; exit 1; }
 command -v curl  >/dev/null || { echo "❌ curl chưa cài."; exit 1; }
 command -v bc    >/dev/null || { echo "❌ bc chưa cài. Đang cài đặt bc..."; sudo apt-get update && sudo apt-get install -y bc; }
@@ -73,7 +73,7 @@ EOF
 cat > Dockerfile <<'EOF'
 FROM ubuntu:20.04
 
-# Không tương tác khi cài đặt tzdata và các gói
+# Không tương tác khi cài tzdata
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=Asia/Ho_Chi_Minh
 
